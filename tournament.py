@@ -6,38 +6,40 @@
 import psycopg2
 
 
-def connect():
+def connect(database_name="tournament"):
     """Connect to the PostgreSQL database.  Returns a database connection."""
-    return psycopg2.connect("dbname=tournament")
+    try:
+        db = psycopg2.connect("dbname={}".format(database_name))
+        cursor = db.cursor()
+        return db, cursor
+    except:
+        print ("unable to connect to %s database" % database_name)
 
 
 def deleteMatches():
     """Remove all the match records from the database."""
-    db = connect()
-    c = db.cursor()
-    c.execute("DELETE FROM matches;")
-    c.execute("UPDATE standings SET wins=0, matches =0;")
+    db, cursor = connect()
+    cursor.execute("DELETE FROM matches;")
+    cursor.execute("UPDATE standings SET wins=0, matches =0;")
     db.commit()
     db.close()
 
 
 def deletePlayers():
     """Remove all the player records from the database."""
-    db = connect()
-    c = db.cursor()
-    c.execute("DELETE FROM standings;")
-    c.execute("DELETE FROM players;")
+    db, cursor = connect()
+    cursor.execute("DELETE FROM standings;")
+    cursor.execute("DELETE FROM players;")
     db.commit()
     db.close()
 
 
 def countPlayers():
     """Returns the number of players currently registered."""
-    db = connect()
-    c = db.cursor()
+    db, cursor = connect()
     query = "SELECT count(*) FROM players;"
-    c.execute(query)
-    data = c.fetchone()
+    cursor.execute(query)
+    data = cursor.fetchone()
     db.close()
     return data[0]
 
@@ -51,13 +53,12 @@ def registerPlayer(name):
     Args:
       name: the player's full name (need not be unique).
     """
-    db = connect()
-    c = db.cursor()
-    c.execute("INSERT INTO players (name) values (%s)", (name,))
+    db, cursor = connect()
+    cursor.execute("INSERT INTO players (name) values (%s)", (name,))
     db.commit()
-    c.execute("SELECT * from players ORDER BY id DESC LIMIT 1;")
-    data = c.fetchone()
-    c.execute("""INSERT INTO standings (player_id, name, wins, matches)
+    cursor.execute("SELECT * from players ORDER BY id DESC LIMIT 1;")
+    data = cursor.fetchone()
+    cursor.execute("""INSERT INTO standings (player_id, name, wins, matches)
         values (%s, %s, 0, 0);""", (data[1], data[0]))
     db.commit()
     db.close()
@@ -77,10 +78,9 @@ def playerStandings():
         wins: the number of matches the player has won
         matches: the number of matches the player has played
     """
-    db = connect()
-    c = db.cursor()
-    c.execute("SELECT * FROM standings;")
-    standings = [(row[0], row[1], row[2], row[3]) for row in c.fetchall()]
+    db, cursor = connect()
+    cursor.execute("SELECT * FROM standings;")
+    standings = [(row[0], row[1], row[2], row[3]) for row in cursor.fetchall()]
     db.close()
     return standings
 
@@ -94,28 +94,28 @@ def reportMatch(winner, loser):
     """
     # update match table
     # update standings
-    db = connect()
-    c = db.cursor()
-    c.execute("""INSERT INTO matches(winner, loser)
+    db, cursor = connect()
+    cursor = db.cursor()
+    cursor.execute("""INSERT INTO matches(winner, loser)
         values (%d, %d);""" % (winner, loser))
     db.commit()
 
     # update winner
-    c.execute("""SELECT * FROM standings WHERE
+    cursor.execute("""SELECT * FROM standings WHERE
             player_id=%d LIMIT 1;""" % winner)
-    data = c.fetchone()
+    data = cursor.fetchone()
     updatedWins = int(data[2]) + 1
     updatedMatches = int(data[3]) + 1
-    c.execute("""UPDATE standings SET  wins=%d, matches=%d
+    cursor.execute("""UPDATE standings SET  wins=%d, matches=%d
         WHERE player_id=%d;""" % (updatedWins, updatedMatches, winner))
     db.commit()
 
     # update loser
-    c.execute("""SELECT * FROM standings
+    cursor.execute("""SELECT * FROM standings
         WHERE player_id=%d LIMIT 1;""" % loser)
-    data = c.fetchone()
+    data = cursor.fetchone()
     updatedMatches = int(data[3]) + 1
-    c.execute("""UPDATE standings SET matches=%d
+    cursor.execute("""UPDATE standings SET matches=%d
         WHERE player_id=%d;""" % (updatedMatches, loser))
     db.commit()
 
@@ -137,10 +137,9 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
-    db = connect()
-    c = db.cursor()
-    c.execute("SELECT * FROM standings ORDER BY wins;")
-    data = c.fetchall()
+    db, cursor = connect()
+    cursor.execute("SELECT * FROM standings ORDER BY wins;")
+    data = cursor.fetchall()
     # matchNum is the number of matches
     matchNum = len(data)/2
     matchList = []
