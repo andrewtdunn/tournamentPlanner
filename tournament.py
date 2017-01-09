@@ -141,5 +141,3 @@ def swissPairings():
                         standings[setNum+1][0], standings[setNum + 1][1]))
 
     return pairings
-
-
