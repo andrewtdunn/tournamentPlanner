@@ -16,7 +16,7 @@ Within psql:
 
 $> CREATE DATABASE tournament;
 
-tournament => \i tournament.sql
+tournament=> \i tournament.sql
 
 
 ```
