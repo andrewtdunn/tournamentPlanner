@@ -53,9 +53,12 @@ def registerPlayer(name):
       name: the player's full name (need not be unique).
     """
     db, cursor = connect()
-    cursor.execute("INSERT INTO players (name) values (%s)", (name,))
+    query = "INSERT INTO players (name) values (%s);"
+    parameter = (name,)
+    cursor.execute(query, parameter)
     db.commit()
-    cursor.execute("SELECT * from players ORDER BY id DESC LIMIT 1;")
+    query = ("SELECT * from players ORDER BY id DESC LIMIT 1;")
+    cursor.execute(query)
     data = cursor.fetchone()
     cursor.execute("""INSERT INTO standings (player_id, name, wins, matches)
         values (%s, %s, 0, 0);""", (data[1], data[0]))
@@ -94,9 +97,9 @@ def reportMatch(winner, loser):
     # update match table
     # update standings
     db, cursor = connect()
-    cursor = db.cursor()
-    cursor.execute("""INSERT INTO matches(winner, loser)
-        values (%d, %d);""" % (winner, loser))
+    query = "INSERT INTO matches(winner, loser) values (%s, %s);"
+    parameters = (winner,), (loser,)
+    cursor.execute(query, parameters)
     db.commit()
 
     # update winner
