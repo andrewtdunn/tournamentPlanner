@@ -13,9 +13,6 @@ Within psql:
 ```bash
 
 
-
-$> CREATE DATABASE tournament;
-
 vagrant@trusty32: vagrant => \i tournament.sql
 tournament=>
 
