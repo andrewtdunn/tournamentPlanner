@@ -16,6 +16,9 @@ Within psql:
 
 $> CREATE DATABASE tournament;
 
+vagrant@trusty32: vagrant => CREATE DATABASE tournament;
+vagrant@trusty32: vagrant => \c tournament;
+vagrant@trusty32: tournament =>
 tournament=> \i tournament.sql
 
 
