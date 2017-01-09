@@ -22,11 +22,3 @@ CREATE TABLE matches (
           winner INTEGER references players(id),
           loser INTEGER references players(id)
 );
-
-CREATE TABLE standings (
-
-          player_id INTEGER references players(id),
-          name TEXT,
-          wins INTEGER,
-          matches INTEGER
-);

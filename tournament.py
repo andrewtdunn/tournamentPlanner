@@ -19,8 +19,7 @@ def connect(database_name="tournament"):
 def deleteMatches():
     """Remove all the match records from the database."""
     db, cursor = connect()
-    cursor.execute("DELETE FROM matches;")
-    cursor.execute("UPDATE standings SET wins=0, matches =0;")
+    cursor.execute("TRUNCATE matches;")
     db.commit()
     db.close()
 
@@ -57,12 +56,6 @@ def registerPlayer(name):
     parameter = (name,)
     cursor.execute(query, parameter)
     db.commit()
-    query = ("SELECT * from players ORDER BY id DESC LIMIT 1;")
-    cursor.execute(query)
-    data = cursor.fetchone()
-    cursor.execute("""INSERT INTO standings (player_id, name, wins, matches)
-        values (%s, %s, 0, 0);""", (data[1], data[0]))
-    db.commit()
     db.close()
 
 
@@ -80,9 +73,27 @@ def playerStandings():
         wins: the number of matches the player has won
         matches: the number of matches the player has played
     """
+
+    # create view
     db, cursor = connect()
-    cursor.execute("SELECT * FROM standings;")
-    standings = [(row[0], row[1], row[2], row[3]) for row in cursor.fetchall()]
+    query = "DROP VIEW IF EXISTS current_standings;"
+    cursor.execute(query)
+    query = """CREATE VIEW current_standings AS
+                            SELECT players.id, players.name,
+                            COUNT(CASE players.id WHEN winner
+                                THEN 1 ELSE NULL END) AS wins,
+                            COUNT(matches.id) AS matches
+                            FROM players
+                            LEFT JOIN matches
+                            ON players.id IN (winner, loser)
+                            GROUP by players.id
+                            ORDER BY wins DESC;"""
+    cursor.execute(query)
+    query = "SELECT * FROM current_standings;"
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    standings = [(row[0], row[1], row[2], row[3])
+                 for row in rows]
     db.close()
     return standings
 
@@ -100,25 +111,6 @@ def reportMatch(winner, loser):
     query = "INSERT INTO matches(winner, loser) values (%s, %s);"
     parameters = (winner,), (loser,)
     cursor.execute(query, parameters)
-    db.commit()
-
-    # update winner
-    cursor.execute("""SELECT * FROM standings WHERE
-            player_id=%d LIMIT 1;""" % winner)
-    data = cursor.fetchone()
-    updatedWins = int(data[2]) + 1
-    updatedMatches = int(data[3]) + 1
-    cursor.execute("""UPDATE standings SET  wins=%d, matches=%d
-        WHERE player_id=%d;""" % (updatedWins, updatedMatches, winner))
-    db.commit()
-
-    # update loser
-    cursor.execute("""SELECT * FROM standings
-        WHERE player_id=%d LIMIT 1;""" % loser)
-    data = cursor.fetchone()
-    updatedMatches = int(data[3]) + 1
-    cursor.execute("""UPDATE standings SET matches=%d
-        WHERE player_id=%d;""" % (updatedMatches, loser))
     db.commit()
 
     db.close()
@@ -139,15 +131,15 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
-    db, cursor = connect()
-    cursor.execute("SELECT * FROM standings ORDER BY wins;")
-    data = cursor.fetchall()
-    # matchNum is the number of matches
-    matchNum = len(data)/2
-    matchList = []
-    for x in range(0, matchNum):
-        # step through players in twos
-        y = x*2
-        matchList.append((data[y][0], data[y][1], data[y+1][0], data[y+1][1]))
-    db.close()
-    return matchList
+
+    standings = playerStandings()
+    numMatches = len(standings)/2
+    pairings = []
+    for x in range(0, numMatches):
+        setNum = 2 * x
+        pairings.append((standings[setNum][0], standings[setNum][1],
+                        standings[setNum+1][0], standings[setNum + 1][1]))
+
+    return pairings
+
+
