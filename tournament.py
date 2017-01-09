@@ -28,8 +28,7 @@ def deleteMatches():
 def deletePlayers():
     """Remove all the player records from the database."""
     db, cursor = connect()
-    cursor.execute("DELETE FROM standings;")
-    cursor.execute("DELETE FROM players;")
+    cursor.execute("TRUNCATE players CASCADE;")
     db.commit()
     db.close()
 
