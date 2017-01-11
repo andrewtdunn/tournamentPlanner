@@ -22,3 +22,14 @@ CREATE TABLE matches (
           winner INTEGER references players(id),
           loser INTEGER references players(id)
 );
+
+CREATE VIEW current_standings AS
+                            SELECT players.id, players.name,
+                            COUNT(CASE players.id WHEN winner
+                                THEN 1 ELSE NULL END) AS wins,
+                            COUNT(matches.id) AS matches
+                            FROM players
+                            LEFT JOIN matches
+                            ON players.id IN (winner, loser)
+                            GROUP by players.id
+                            ORDER BY wins DESC;

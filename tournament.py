@@ -76,19 +76,6 @@ def playerStandings():
 
     # create view
     db, cursor = connect()
-    query = "DROP VIEW IF EXISTS current_standings;"
-    cursor.execute(query)
-    query = """CREATE VIEW current_standings AS
-                            SELECT players.id, players.name,
-                            COUNT(CASE players.id WHEN winner
-                                THEN 1 ELSE NULL END) AS wins,
-                            COUNT(matches.id) AS matches
-                            FROM players
-                            LEFT JOIN matches
-                            ON players.id IN (winner, loser)
-                            GROUP by players.id
-                            ORDER BY wins DESC;"""
-    cursor.execute(query)
     query = "SELECT * FROM current_standings;"
     cursor.execute(query)
     rows = cursor.fetchall()
