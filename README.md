@@ -14,6 +14,11 @@ Within psql:
 
 
 vagrant@trusty32: vagrant => \i tournament.sql
+CREATE DATABASE
+You are now connected to database "tournament" as user "vagrant".
+CREATE TABLE
+CREATE TABLE
+CREATE VIEW
 tournament=>
 
 
